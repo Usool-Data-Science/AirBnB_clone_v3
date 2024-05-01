@@ -68,8 +68,8 @@ test_db_storage.py'])
                             "{:s} method needs a docstring".format(func[0]))
 
 
-class TestFileStorage(unittest.TestCase):
-    """Test the FileStorage class"""
+class TestDBStorage(unittest.TestCase):
+    """Test the db class"""
     @unittest.skipIf(models.storage_t != 'db', "not testing db storage")
     def test_all_returns_dict(self):
         """Test that all returns a dictionaty"""
@@ -78,11 +78,102 @@ class TestFileStorage(unittest.TestCase):
     @unittest.skipIf(models.storage_t != 'db', "not testing db storage")
     def test_all_no_class(self):
         """Test that all returns all rows when no class is passed"""
+        ex_state = {"name": "Abuja"}
+        state1 = State(**ex_state)
+        models.storage.new(state1)
+        models.storage.save()
+
+        session = models.storage._DBStorage__session
+        everything = session.query(State).all()
+        self.assertNotEquals(len(everything), 0)
 
     @unittest.skipIf(models.storage_t != 'db', "not testing db storage")
     def test_new(self):
         """test that new adds an object to the database"""
+        ex_state = {"name": "Abuja"}
+        state1 = State(**ex_state)
+        models.storage.new(state1)
+        models.storage.save()
+
+        session = models.storage._DBStorage__session
+        abuja = session.query(State).where(State.name == 'Abuja').one_or_none()
+        self.assertNotNone(abuja)
+        self.assertEqual(state1.id, abuja.id)
+        self.assertEqual(state1.name, abuja.name)
 
     @unittest.skipIf(models.storage_t != 'db', "not testing db storage")
     def test_save(self):
-        """Test that save properly saves objects to file.json"""
+        """
+        Test that save properly saves objects to database by:
+            First add Abuja to the db, then add Kano to the db.
+            Check the len before and after Kano they must not
+            be equal otherwise data is not properly being saved.
+        """
+        ex_state1 = {"name": "Abuja"}
+        state1 = State(**ex_state1)
+        models.storage.new(state1)
+        models.storage.save()
+        session = models.storage._DBStorage__session
+        after_abuja = session.query(State).all()
+
+        ex_state2 = {"name": "Kano"}
+        state1 = State(**ex_state2)
+        models.storage.new(state1)
+        models.storage.save()
+        session = models.storage._DBStorage__session
+        after_Kano = session.query(State).all()
+
+        self.assertNotEqual(len(after_abuja), len(after_Kano))
+
+    @unittest.skipIf(models.storage_t != 'db', "not testing db storage")
+    def test_get(self):
+        """
+        Tests if the get function is working perfectly by:
+            1. Create a valid state instance, then use storage.get()
+                to retrieve it back
+            2. Compare the id of the retrieved to the id of the instance.
+                They must be equal
+            3. Then try with a valid State but wrong ID
+            4. Then try with an invalid class e.g. STATES instead of State,
+                or Country instead of City
+        """
+        storage = models.storage
+        storage.reload()
+        ex_state1 = {"name": "Calabar"}
+        state1 = State(**ex_state1)
+        models.storage.new(state1)
+        models.storage.save()
+        calabar = models.storage.get(State, state1.id)
+        self.assertEqual(calabar.id, state1.id)
+
+        wrong_id = models.storage.get(State, 'wrong_id')
+        self.assertIsNone(wrong_id)
+
+        invalid_class = models.storage.get('STATES', 'any_id')
+        self.assertIsNone(invalid_class)
+
+    @unittest.skipIf(models.storage_t != 'db', "not testing db storage")
+    def test_count(self):
+        """
+        Test the count function by:
+            Creating 2 instances of objects and then count the instance
+            and also remove the object to count all instances.
+        """
+        storage = models.storage
+        storage.reload()
+        ex_state1 = {"name": "Calabar"}
+        state1 = State(**ex_state1)
+        models.storage.new(state1)
+        models.storage.save()
+
+        ex_city1 = {'name': 'Ibadan', 'state_id': state1.id}
+        city1 = City(**ex_city1)
+
+        models.storage.new(city1)
+        models.storage.save()
+
+        state_count = models.storage.count(State)
+        self.assertEqual(state_count, len(storage.all(State)))
+
+        all_count = models.storage.count()
+        self.assertEqual(all_count, len(storage.all()))
