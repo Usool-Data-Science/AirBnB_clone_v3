@@ -2,6 +2,6 @@
 """A initialization that declares the flask Blueprint"""
 from flask import Blueprint
 
-app_view = Blueprint("app_views", __name__, url_prefix='/api/vi')
+app_views = Blueprint("app_views", __name__, url_prefix='/api/v1')
 
-from api.vi.views.index import *
+from api.v1.views.index import *
