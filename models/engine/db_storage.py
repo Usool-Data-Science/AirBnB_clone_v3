@@ -92,7 +92,7 @@ class DBStorage:
         """
             Counts the number of occurence of an object
         """
-        if (not cls) or (cls not in classes.values()):
+        if (cls not in classes.values()):
             return
         elif cls in classes.values():
             return len(self.all(cls))
