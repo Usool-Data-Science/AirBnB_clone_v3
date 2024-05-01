@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 """A module that returns the status of our api"""
 from os import getenv
-from flask import Flask
+from flask import Flask, jsonify
 from models import storage
 from api.v1.views import app_views
 
@@ -13,7 +13,15 @@ app.register_blueprint(app_views)
 
 @app.teardown_appcontext
 def teardown(exception):
+    """Closes the storage in case of error"""
     storage.close()
+
+
+@app.errorhandler(404)
+def error_404(error):
+    """A custom 404 error message"""
+    response = {"error": "Not found"}
+    return jsonify(response), 404
 
 
 if __name__ == '__main__':
