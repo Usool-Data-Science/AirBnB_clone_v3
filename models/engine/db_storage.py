@@ -91,10 +91,22 @@ class DBStorage:
     def count(self, cls=None):
         """
             Counts the number of occurence of an object
-        """
-        if (cls not in classes.values()):
+        values = classes.values()
+        values_str = [str(value) for value in list(values)]
+
+        if (cls not in values) or (cls not in values_str):
             return
-        elif cls in classes.values():
+        elif (cls in values) or (cls in values_str):
             return len(self.all(cls))
         else:
             return len(self.all())
+        """
+        if not cls:
+            all_ = self.all()
+            return len(all_)
+        for class_, value in classes.items():
+            if cls == class_ or cls == value:
+                everything = self.all(cls)
+                return len(everything)
+        if cls not in classes.values():
+            return
