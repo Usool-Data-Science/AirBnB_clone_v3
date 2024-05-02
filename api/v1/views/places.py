@@ -66,10 +66,10 @@ def create_place(city_id):
             return abort(400, "Missing name")
 
         user_id = payload.get("user_id")
-        
+
         users = storage.get(User, user_id)
         if not users:
-            return abort(404, "NO USER WITH THIS ID")
+            return abort(404)
 
         place = Place(**payload)
         place.save()
