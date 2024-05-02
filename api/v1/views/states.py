@@ -63,10 +63,9 @@ def update_state(state_id):
     if request.content_type != 'application/json':
         return abort(400, 'Not a JSON')
 
-    if not request.get_json():
-        return abort(400, 'Not a JSON')
-    else:
-        state_prop = request.get_json()
+    state_prop = request.get_json()
+    if not state_prop:
+        return abort(400, "Not a JSON")
 
     state = storage.get(State, state_id)
     if not state:

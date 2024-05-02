@@ -45,7 +45,7 @@ def delete_city(city_id):
 
 
 @app_views.route("states/<state_id>/cities", methods=["POST"],
-                strict_slashes=False)
+                 strict_slashes=False)
 def add_city(state_id):
     if (request.content_type != 'application/json'):
         return abort(400, "Not a JSON")
