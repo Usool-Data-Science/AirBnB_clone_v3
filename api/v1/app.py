@@ -2,11 +2,19 @@
 """A module that returns the status of our api"""
 from os import getenv
 from flask import Flask, jsonify
+from flask_cors import CORS
 from models import storage
 from api.v1.views import app_views
 
 
 app = Flask(__name__)
+
+ALL = '0.0.0.0'
+# GOOGLE = 'https://www.google.com'
+ORIGINS = (ALL,)
+RESOURCES_PATH = r'/api/v1/*'
+RESOURCES = {RESOURCES_PATH: {'origins': ORIGINS}}
+CORS(app, resources=RESOURCES)
 
 app.register_blueprint(app_views)
 
