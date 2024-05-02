@@ -12,7 +12,7 @@ def get_users():
     """Return the full list of end users in a state"""
     users = []
     for k, v in storage.all(User).items():
-        amenities.append(v.to_dict())
+        users.append(v.to_dict())
     response = jsonify(users)
 
     return response
@@ -76,6 +76,8 @@ def update_user(user_id):
         return abort(400, "Not a JSON")
 
     user = storage.get(User, user_id)
+    if not user:
+        return abort(404)
     ignore_keys = ['id', 'email', 'created_at', 'update_at']
 
     for k, v in payload.items():

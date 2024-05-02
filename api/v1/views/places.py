@@ -2,69 +2,85 @@
 """An endpoint for handling amenities requests"""
 from flask import jsonify, abort, request
 from models import storage
-from models.amenity import Amenity
-from models.state import State
+from models.user import User
+from models.city import City
+from models.place import Place
 from api.v1.views import app_views
 
 
-@app_views.route("/amenities", strict_slashes=False)
-def get_amenities():
-    """Return the full list of available amenities in a state"""
-    amenities = []
-    for k, v in storage.all(Amenity).items():
-        amenities.append(v.to_dict())
-    response = jsonify(amenities)
+@app_views.route("/cities/<city_id>/places", strict_slashes=False)
+def get_places_in_city(city_id):
+    """Return the full list of places in a city"""
+    city = storage.get(City, city_id)
 
-    return response
-
-
-@app_views.route("/amenities/<amenity_id>", strict_slashes=False)
-def get_specific_amenities(amenity_id):
-    """Returns a specific amenity based on the given id"""
-    amenity = storage.get(Amenity, amenity_id)
-
-    if amenity:
-        return jsonify(amenity.to_dict())
+    if city:
+        places = [place.to_dict() for place in city.places]
+        response = jsonify(places)
+        return response
     else:
         return abort(404)
 
 
-@app_views.route("/amenities/<amenity_id>", methods=["DELETE"],
+@app_views.route("/places/<place_id>", strict_slashes=False)
+def get_specific_place(place_id):
+    """Returns a specific place based on the given id"""
+    place = storage.get(Place, place_id)
+
+    if place:
+        return jsonify(place.to_dict())
+    else:
+        return abort(404)
+
+
+@app_views.route("/places/<place_id>", methods=["DELETE"],
                  strict_slashes=False)
-def delete_amenity(amenity_id):
-    """Deletes a particular amenity based on its Id"""
-    amenity = storage.get(Amenity, amenity_id)
-    if not amenity:
+def delete_place(place_id):
+    """Deletes a particular place based on its Id"""
+    place = storage.get(Place, place_id)
+    if not place:
         abort(404)
 
-    storage.delete(amenity)
+    storage.delete(place)
     storage.save()
 
     return jsonify({}), 200
 
 
-@app_views.route("/amenities", methods=["POST"], strict_slashes=False)
-def create_amenity():
-    """Creates a new instance of amenity"""
-    if request.content_type != "application/json":
-        return abort(400, "Not a JSON")
-
-    payload = request.get_json()
-    if not payload:
-        return abort(400, "Not a JSON")
-
-    if "name" not in payload:
-        return abort(400, "Missing name")
-
-    amenity = Amenity(**payload)
-    amenity.save()
-
-    return jsonify(amenity.to_dict()), 201
-
-
-@app_views.route("/amenities/<amenity_id>", methods=["PUT"],
+@app_views.route("cities/<city_id>/places", methods=["POST"],
                  strict_slashes=False)
-def update_amenity(amenity_id):
+def create_place(city_id):
+    """Creates a new instance of place"""
+    city = storage.get(City, city_id)
+    if city:
+        if request.content_type != "application/json":
+            return abort(400, "Not a JSON")
+
+        payload = request.get_json()
+        if not payload:
+            return abort(400, "Not a JSON")
+
+        if "user_id" not in payload:
+            return abort(400, "Missing user_id")
+
+        if "name" not in payload:
+            return abort(400, "Missing name")
+
+        user_id = payload.get("user_id")
+        
+        users = storage.get(User, user_id)
+        if not users:
+            return abort(404, "NO USER WITH THIS ID")
+
+        place = Place(**payload)
+        place.save()
+
+        return jsonify(place.to_dict()), 201
+    else:
+        return abort(404)
+
+@app_views.route("/places/<place_id>", methods=["PUT"],
+                 strict_slashes=False)
+def update_place(place_id):
     """Updates the name of a specific amenity"""
     if request.content_type != "application/json":
         return abort(400, "Not a JSON")
@@ -72,14 +88,16 @@ def update_amenity(amenity_id):
     if not payload:
         return abort(400, "Not a JSON")
 
-    amenity = storage.get(Amenity, amenity_id)
-    ignore_keys = ['id', 'created_at', 'update_at']
+    place = storage.get(Place, place_id)
+    if not place:
+        return abort(404)
+    ignore_keys = ['id', 'user_id', 'city_id', 'created_at', 'update_at']
 
     for k, v in payload.items():
         if k not in ignore_keys:
-            setattr(amenity, k, v)
+            setattr(place, k, v)
 
-    amenity.save()
-    response = jsonify(amenity.to_dict())
+    place.save()
+    response = jsonify(place.to_dict())
 
     return response, 200
