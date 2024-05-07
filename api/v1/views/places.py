@@ -128,24 +128,26 @@ def search_places():
         return response
 
     # If atleast one filter is given, append the places in it to a set
-    all_places = set()
+    all_places = []
 
     if state_filter:
         state_objs = [storage.get(State, st_id) for st_id in state_filter]
         for state in state_objs:
             if state:
-                for city in state.city:
+                for city in state.cities:
                     if city:
-                        for place in city.places:
-                            all_places.update(place)
+                        for ind, place in enumerate(city.places):
+                            if place not in all_places:
+                                all_places.append(place)
 
     if city_filter:
         city_objs = [storage.get(City, city_id) for city_id in city_filter]
 
         for city in city_objs:
             if city:
-                for place in city.place:
-                    all_places.update(place)
+                for place in city.places:
+                    if place not in all_places:
+                        all_places.append(place)
 
     """
     Use the amenities provide to filter all places only when there
@@ -158,7 +160,7 @@ def search_places():
         amn_objs = [storage.get(Amenity, amn_id) for amn_id in amenity_filter]
         for place in places:
             if all(amn in place.amenities for amn in amn_objs):
-                all_places.update(place)
+                all_places.update(place.to_dict())
 
     # Convert the places to dict and remove the list of amenities from it.
     final_places = []
